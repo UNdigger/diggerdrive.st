@@ -1,164 +1,85 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的网盘</title>
+    <title>GitHub 网盘</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-            color: #333;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .upload-section, .file-list {
-            margin-bottom: 20px;
-        }
-        .file-list ul {
-            list-style: none;
-            padding: 0;
-        }
-        .file-list li {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .file-list li:last-child {
-            border-bottom: none;
-        }
-        .file-list a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        .file-list a:hover {
-            text-decoration: underline;
-        }
-        .upload-section input[type="file"] {
-            margin-bottom: 10px;
-        }
-        .upload-section button {
-            padding: 10px 20px;
-            background: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .upload-section button:hover {
-            background: #0056b3;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 10px 0; }
+        a { text-decoration: none; color: blue; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>我的网盘</h1>
-
-        <!-- 文件上传 -->
-        <div class="upload-section">
-            <input type="file" id="fileInput">
-            <button onclick="uploadFile()">上传文件</button>
-        </div>
-
-        <!-- 文件列表 -->
-        <div class="file-list">
-            <h2>文件列表</h2>
-            <ul id="fileList"></ul>
-        </div>
-    </div>
-
+    <h1>GitHub 网盘</h1>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">上传</button>
+    <ul id="file-list">加载中...</ul>
+    
     <script>
-        // GitHub 配置
-        const GITHUB_TOKEN = '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'; // 替换为你的 GitHub Token
-        const GITHUB_REPO = 'UNdigger/diggerdrive.st'; // 例如：octocat/my-drive
-        const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/contents`;
+        const repo = "UNdigger/diggerdrive.st";
+        const token = "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";
+        const branch = "main";
 
-        // 获取文件列表
         async function fetchFiles() {
-            try {
-                const response = await fetch(GITHUB_API_URL, {
-                    headers: {
-                        Authorization: `token ${GITHUB_TOKEN}`,
-                        Accept: 'application/vnd.github.v3+json'
-                    }
-                });
-                const files = await response.json();
-                renderFileList(files);
-            } catch (error) {
-                console.error('获取文件列表失败:', error);
-            }
+            const url = `https://api.github.com/repos/${repo}/contents/`;
+            const response = await fetch(url, {
+                headers: { "Authorization": `token ${token}` }
+            });
+            const files = await response.json();
+            const fileList = document.getElementById("file-list");
+            fileList.innerHTML = "";
+            
+            files.forEach(file => {
+                if (file.type === "file") {
+                    const li = document.createElement("li");
+                    const a = document.createElement("a");
+                    a.href = file.download_url;
+                    a.textContent = file.name;
+                    a.target = "_blank";
+                    li.appendChild(a);
+                    fileList.appendChild(li);
+                }
+            });
         }
 
-        // 渲染文件列表
-        function renderFileList(files) {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = files
-                .filter(file => file.type === 'file') // 只显示文件
-                .map(file => `
-                    <li>
-                        <span>${file.name}</span>
-                        <a href="${file.download_url}" target="_blank">下载</a>
-                    </li>
-                `)
-                .join('');
-        }
-
-        // 上传文件
         async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) {
-                alert('请选择一个文件');
+            const fileInput = document.getElementById("fileInput");
+            if (fileInput.files.length === 0) {
+                alert("请选择一个文件！");
                 return;
             }
-
+            
+            const file = fileInput.files[0];
             const reader = new FileReader();
-            reader.onload = async function (e) {
-                const content = btoa(e.target.result); // 将文件内容转换为 Base64
-                const fileName = file.name;
-                const url = `${GITHUB_API_URL}/${fileName}`;
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'PUT',
-                        headers: {
-                            Authorization: `token ${GITHUB_TOKEN}`,
-                            Accept: 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message: `上传文件: ${fileName}`,
-                            content: content
-                        })
-                    });
-
-                    if (response.ok) {
-                        alert('文件上传成功');
-                        fetchFiles(); // 刷新文件列表
-                    } else {
-                        alert('文件上传失败');
-                    }
-                } catch (error) {
-                    console.error('上传文件失败:', error);
+            reader.readAsDataURL(file);
+            reader.onload = async function () {
+                const content = reader.result.split(",")[1];
+                const url = `https://api.github.com/repos/${repo}/contents/${file.name}`;
+                
+                const response = await fetch(url, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: `上传 ${file.name}`,
+                        content: content,
+                        branch: branch
+                    })
+                });
+                
+                if (response.ok) {
+                    alert("文件上传成功！");
+                    fetchFiles();
+                } else {
+                    alert("上传失败！");
                 }
             };
-            reader.readAsBinaryString(file); // 读取文件内容
         }
-
-        // 初始化
+        
         fetchFiles();
     </script>
 </body>

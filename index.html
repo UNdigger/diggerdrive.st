@@ -3,24 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub 网盘</title>
+    <title>GitHub 网盘 - LCARS 风格</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        ul { list-style: none; padding: 0; }
-        li { margin: 10px 0; }
-        a { text-decoration: none; color: blue; }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes slide-in {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: black;
+            color: #FFCC00;
+            text-align: center;
+            padding: 20px;
+        }
+        .lcars-bar {
+            background-color: #9932CC;
+            padding: 15px;
+            border-radius: 20px;
+            text-align: left;
+            margin-bottom: 20px;
+            animation: slide-in 0.5s ease-out;
+        }
+        .lcars-button {
+            background-color: #FF6633;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            margin: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            animation: blink 1s infinite alternate;
+        }
+        .lcars-button:hover {
+            background-color: #FF4500;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+            animation: slide-in 0.5s ease-out;
+        }
+        a {
+            text-decoration: none;
+            color: #FFCC00;
+        }
     </style>
 </head>
 <body>
-    <h1>GitHub 网盘</h1>
+    <audio id="beep" src="https://www.trekcore.com/audio/computerbeep_27.mp3"></audio>
+    <div class="lcars-bar">
+        <h1>GitHub 网盘 - LCARS</h1>
+    </div>
     <input type="file" id="fileInput" />
-    <button onclick="uploadFile()">上传</button>
+    <button class="lcars-button" onclick="uploadFile(); playBeep();">上传</button>
     <ul id="file-list">加载中...</ul>
     
     <script>
         const repo = "UNdigger/diggerdrive.st";
         const token = "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";
         const branch = "main";
+        
+        function playBeep() {
+            document.getElementById("beep").play();
+        }
 
         async function fetchFiles() {
             const url = `https://api.github.com/repos/${repo}/contents/`;
@@ -34,10 +89,12 @@
             files.forEach(file => {
                 if (file.type === "file") {
                     const li = document.createElement("li");
+                    li.style.animation = "slide-in 0.5s ease-out";
                     const a = document.createElement("a");
                     a.href = file.download_url;
                     a.textContent = file.name;
                     a.target = "_blank";
+                    a.onclick = playBeep;
                     li.appendChild(a);
                     fileList.appendChild(li);
                 }
